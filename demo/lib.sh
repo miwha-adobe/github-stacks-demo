@@ -72,34 +72,37 @@ teardown_demo() {
   rm -f "$gitdir/gh-stack" "$gitdir/gh-stack.lock" 2>/dev/null || true
 }
 
-# If a token change was merged into the trunk, open+merge a small PR that
-# restores the baseline so the demo can be run again from a known state.
+# If any migration change was merged into the trunk, open + merge a small PR
+# that restores the whole baseline library so the demo can be run again cleanly.
 restore_main_to_base() {
   git fetch "$REMOTE" >/dev/null 2>&1 || true
 
   # Nothing to restore if the sample library isn't on the trunk yet.
   git cat-file -e "$REMOTE/$TRUNK:src/tokens.js" 2>/dev/null || return 0
 
-  if diff -q <(git show "$REMOTE/$TRUNK:src/tokens.js") "$SCENARIO_DIR/base/src/tokens.js" >/dev/null 2>&1; then
-    return 0  # trunk already matches the baseline
-  fi
-
-  say "Restoring $TRUNK to the baseline (a token change had been merged)"
   git branch -D "$RESTORE_BRANCH" >/dev/null 2>&1 || true
   git checkout -q -B "$RESTORE_BRANCH" "$REMOTE/$TRUNK"
-  cp -R "$SCENARIO_DIR/base/src/." src/
+  rm -rf src
+  cp -R "$SCENARIO_DIR/base/src" src
   git add -A
-  git commit -q -m "chore(demo): restore baseline tokens on $TRUNK"
+  if git diff --cached --quiet; then
+    git checkout -q "$TRUNK" 2>/dev/null || true
+    git branch -D "$RESTORE_BRANCH" >/dev/null 2>&1 || true
+    return 0  # trunk already at baseline
+  fi
+
+  say "Restoring $TRUNK to the baseline library (a migration change had been merged)"
+  git commit -q -m "chore(demo): restore baseline library on $TRUNK"
   git push -q -u "$REMOTE" "$RESTORE_BRANCH"
   gh pr create --base "$TRUNK" --head "$RESTORE_BRANCH" \
-    --title "chore(demo): restore baseline tokens" \
-    --body "Resets the sample library tokens to the demo baseline so the stack demo can be re-run." >/dev/null 2>&1 || true
+    --title "chore(demo): restore baseline library" \
+    --body "Resets src/ to the demo baseline so the stack demo can be re-run from a known state." >/dev/null 2>&1 || true
   gh pr merge "$RESTORE_BRANCH" --squash --delete-branch >/dev/null 2>&1 \
     || gh pr merge "$RESTORE_BRANCH" --squash --delete-branch --admin >/dev/null 2>&1 \
     || warn "Could not auto-merge the restore PR — merge it manually, then re-run."
-  git checkout -q "$TRUNK" || true
+  git checkout -q "$TRUNK" 2>/dev/null || true
   git branch -D "$RESTORE_BRANCH" >/dev/null 2>&1 || true
   git fetch "$REMOTE" >/dev/null 2>&1 || true
-  git reset -q --hard "$REMOTE/$TRUNK" || true
-  ok "Trunk restored to baseline"
+  git reset -q --hard "$REMOTE/$TRUNK" 2>/dev/null || true
+  ok "Trunk restored to the baseline library"
 }

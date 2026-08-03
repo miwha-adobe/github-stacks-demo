@@ -95,15 +95,18 @@ gh stack push
 demo/prove-rerere.sh
 ```
 
-It re-triggers the identical conflict; git prints **“Resolved 'src/tokens.js' using previous
-resolution”** and finishes with no editing.
+It rebuilds the identical conflict in a throwaway sandbox; git prints **“Staged 'src/tokens.js'
+using previous resolution”** and finishes with nothing to edit.
 
 > **Say:** "`gh stack init` turned on `git rerere`. That resolution is now remembered — so every
 > future time `main` moves and this conflict recurs, across all 8 phases, it resolves itself."
 
 ### ③ Merge the bottom → auto-retarget → sync (~1m)
 
-In the browser, **merge the bottom PR (phase 1)**.
+In the browser, **merge the bottom PR (phase 1)** — click Merge in its merge box.
+
+> CLI equivalent: `gh stack merge <phase-1-PR#>`. Stack members can't be landed with a plain
+> `gh pr merge` (GitHub requires the atomic stack merge) — use the merge button or `gh stack merge`.
 
 > **Say:** "Phase 1 is in `main`. Watch phase 2 — GitHub automatically retargeted its base to
 > `main` and rebased the rest. I didn't touch a single PR base."
@@ -136,6 +139,7 @@ gh stack view
 | Situation | Fix |
 | --- | --- |
 | Rebase looks wrong mid-flight | `gh stack rebase --abort` (restores every branch) |
+| `rebase` / `sync` says "unstaged changes" | Commit or stash first — they need a clean worktree |
 | Want to start the whole demo over | `demo/reset.sh` then `demo/setup.sh` |
 | A command is waiting on a prompt | most accept `--auto` / `--yes` |
 | Lost track of where you are | `gh stack view` |

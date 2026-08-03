@@ -1,38 +1,41 @@
 #!/usr/bin/env bash
 #
-# land-on-main.sh — simulate a teammate merging an unrelated change to `main`
-# WHILE your stack is in flight. After this runs, every branch in the stack is
-# based on a now-stale `main` and must be re-synced.
+# land-on-main.sh — simulate a teammate merging a change to `main` WHILE your
+# stack is in review, then push it. After this runs, every branch in the stack
+# is based on a now-stale `main` and must be re-synced (that's the whole point).
 #
-# The change is intentionally additive (a new file) so the cascading rebase is
-# CLEAN — the pain being demonstrated is the orchestration (N rebases, in the
-# right order, N force-pushes), not conflict resolution.
+# Re-runnable: each run appends a distinct, timestamped entry, so you can fire
+# it several times during a demo and run `gh stack sync` after each one.
 #
-# Want to demo conflict handling too? Uncomment the CONFLICT VARIANT block
-# below; it edits src/tokens.js, which stack/foundation also edits, so the
-# rebase stops on a real conflict.
+# The change is intentionally additive so the cascading rebase is CLEAN — the
+# pain being demonstrated is the orchestration, not conflict resolution. Want a
+# conflict? See the CONFLICT VARIANT note at the bottom.
 
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 git checkout -q main
 
-cat > src/version.js <<'EOF'
-// Landed on main by a teammate while the stack was in review.
-export const VERSION = '0.2.0';
-EOF
-
-# ── CONFLICT VARIANT (optional) ───────────────────────────────
-# cat > src/tokens.js <<'EOF'
-# // Shared tokens (edited on main — will conflict with stack/foundation).
-# export const SIZES = ['xs', 's', 'm', 'l', 'xl'];
-# export const VARIANTS = ['accent', 'neutral', 'positive', 'negative'];
-# EOF
-# ──────────────────────────────────────────────────────────────
+stamp="$(date +%H:%M:%S)"
+echo "- Teammate change landed at ${stamp}" >> CHANGES.md
 
 git add -A
-git commit -q -m "feat: add VERSION constant (landed on main)"
-echo "==> main moved:"
+git commit -q -m "chore: teammate change landed on main (${stamp})"
+
+push=1
+[[ "${1:-}" == "--no-push" ]] && push=0
+if [[ $push -eq 1 ]]; then
+    git push -q origin main
+    echo "==> main moved AND pushed:"
+else
+    echo "==> main moved (local only, not pushed):"
+fi
 git --no-pager log --oneline -2 main | sed 's/^/    /'
 echo
-echo "Your stack is now behind main. Time to re-sync."
+echo "Your stack is now behind main. Re-sync with:  gh stack sync"
+
+# ── CONFLICT VARIANT ──────────────────────────────────────────
+# To demo conflict handling, instead edit a file the stack also edits, e.g.
+# rewrite src/tokens.js here (stack/foundation edits it). The rebase will then
+# stop on a real conflict; resolve it once and continue with `gh stack rebase
+# --continue` (gh stack still handles the ordering/pushing for you).

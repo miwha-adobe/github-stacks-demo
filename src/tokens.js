@@ -11,3 +11,9 @@ export const variants = {
   primary: { weight: 'bold' },
   secondary: { weight: 'regular' },
 };
+
+// Migration phase 3: canonical defaults used when options are omitted.
+export const defaults = {
+  size: 'medium',
+  variant: 'primary',
+};

@@ -61,6 +61,11 @@ teardown_demo() {
     git push "$REMOTE" --delete "$b" >/dev/null 2>&1 && ok "Deleted remote branch $b" || true
   done
 
+  # Prune remote-tracking refs. Branches deleted via `gh pr close --delete-branch`
+  # leave stale origin/* refs behind, which would make the next force-with-lease
+  # push fail with "stale info". This resyncs them.
+  git fetch "$REMOTE" --prune >/dev/null 2>&1 || true
+
   # Delete local branches (move to trunk first so we can delete them).
   git checkout "$TRUNK" >/dev/null 2>&1 || true
   for b in "${branches[@]}"; do

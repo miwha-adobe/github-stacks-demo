@@ -67,9 +67,12 @@ teardown_demo() {
     git branch -D "$b" >/dev/null 2>&1 && ok "Deleted local branch $b" || true
   done
 
-  # Clear gh stack local tracking so the next stack starts clean.
+  # Clear gh stack local tracking and any recorded rerere resolutions so the
+  # next demo starts fresh — the first conflict must be resolved by hand before
+  # rerere can replay it.
   local gitdir; gitdir="$(git rev-parse --git-dir)"
   rm -f "$gitdir/gh-stack" "$gitdir/gh-stack.lock" 2>/dev/null || true
+  rm -rf "$gitdir/rr-cache" 2>/dev/null || true
 }
 
 # If any migration change was merged into the trunk, open + merge a small PR

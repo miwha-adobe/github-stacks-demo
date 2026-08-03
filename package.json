@@ -1,0 +1,11 @@
+{
+    "name": "github-stacks-demo",
+    "version": "0.1.0",
+    "description": "A tiny project used to demo GitHub Stacks (stacked pull requests).",
+    "type": "module",
+    "main": "src/index.js",
+    "scripts": {
+        "test": "node --test"
+    },
+    "license": "MIT"
+}

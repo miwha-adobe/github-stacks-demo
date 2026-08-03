@@ -1,1 +1,1 @@
-# github_stacks_demo
+# github-stacks-demo

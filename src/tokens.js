@@ -1,7 +1,13 @@
 // Design tokens shared across the component library.
 export const sizes = {
   small: 8,
-  medium: 12,
+  medium: 12, // legacy default; see migration phase 1
   large: 24,
   xlarge: 32,
+};
+
+// New in the migration: named variants layered on top of sizes.
+export const variants = {
+  primary: { weight: 'bold' },
+  secondary: { weight: 'regular' },
 };

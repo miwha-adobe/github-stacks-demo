@@ -1,8 +1,8 @@
 # GitHub Stacks — 5-minute demo runbook
 
 **What this proves:** the thing that hurts today — rebasing a multi-phase migration when
-`main` moves — becomes essentially **two commands**, and conflicts you resolve **once** are
-replayed automatically for the life of the migration.
+`main` moves — becomes **two commands**: `gh stack rebase` restacks every phase at once, and
+`gh stack sync --prune` cleans up after a merge. No more rebasing and re-pointing each PR by hand.
 
 The demo migrates a component's API in **4 phases** (standing in for your 8). Each phase is a
 PR that targets the phase below it — a *stack*. We use GitHub's own tooling: the
@@ -45,7 +45,7 @@ stack so the audience sees the dependency chain and that reviewers can read one 
 
 > **Say:** "Now watch what happens when `main` moves underneath all of this."
 
-### ② Main moves → one cascading rebase (the payoff, ~2.5m)
+### ② Main moves → one cascading rebase (the payoff, ~2m)
 
 Merge the **teammate PR** in the browser (or run the command). This is `main` moving.
 
@@ -86,20 +86,9 @@ Phases 2 → 4 rebase automatically. Push the restacked branches:
 gh stack push
 ```
 
-> **Say:** "One command restacked all four phases with a *single* resolution. At 8 phases the
-> old way is 8 rebases and re-resolving the same conflict over and over."
-
-**The `rerere` payoff** — resolve once, forever:
-
-```bash
-demo/prove-rerere.sh
-```
-
-It rebuilds the identical conflict in a throwaway sandbox; git prints **“Staged 'src/tokens.js'
-using previous resolution”** and finishes with nothing to edit.
-
-> **Say:** "`gh stack init` turned on `git rerere`. That resolution is now remembered — so every
-> future time `main` moves and this conflict recurs, across all 8 phases, it resolves itself."
+> **Say:** "One command restacked all four phases from a *single* resolution, and updated all
+> four PRs. The old way is one rebase per phase — 8 at full size — then re-pointing every PR's
+> base by hand. That's the whole point of stacks."
 
 ### ③ Merge the bottom → auto-retarget → sync (~1m)
 
@@ -128,9 +117,8 @@ gh stack view
 ### Wrap (~30s)
 
 > **Say:** "The whole manual rebase dance became two commands: `gh stack rebase` when `main`
-> moves, `gh stack sync --prune` after a merge — plus `rerere` so a conflict is solved once for
-> the life of the migration. Same flow at 8 phases, and it works from the web UI, the CLI,
-> mobile, and coding agents."
+> moves, and `gh stack sync --prune` after a merge. Same flow at 8 phases, and it works from the
+> web UI, the CLI, mobile, and coding agents."
 
 ---
 
@@ -160,8 +148,7 @@ gh stack view
 
 - **4 phases here → 8 in real life.** The commands and the number of manual resolutions don't
   grow with the stack; `gh stack rebase` is still one command.
-- **`main` moves repeatedly** over a long migration. `rerere` (enabled by `gh stack init`) means
-  each recurring conflict is resolved once, then replayed — the single biggest rebase time-sink,
-  gone.
+- **`main` moves repeatedly** over a long migration. Each time, one `gh stack rebase` restacks
+  every phase and updates every PR — you never rebase branch-by-branch or re-point PR bases.
 - **Lower-phase fixes** (a reviewer asks you to change phase 2) are the same story: fix it, run
   `gh stack rebase`, and everything above restacks in one shot.
